@@ -124,7 +124,7 @@ def get_all_posts():
     """Get all posts with author info"""
     try:
         response = supabase.table("posts").select("id, user_id, title, content, category, views, created_at, users(username)").order("created_at", ascending=False).execute()
-        return response.data
+        return response.data if response.data else []
     except Exception as e:
         return []
 
@@ -142,7 +142,7 @@ def get_user_posts(user_id):
     """Get all posts by a specific user"""
     try:
         response = supabase.table("posts").select("id, title, content, category, views, created_at, users(username)").eq("user_id", user_id).order("created_at", ascending=False).execute()
-        return response.data
+        return response.data if response.data else []
     except Exception as e:
         return []
 
@@ -202,7 +202,7 @@ def get_comments(post_id):
     """Get all comments for a post"""
     try:
         response = supabase.table("comments").select("id, user_id, content, created_at, parent_id, users(username)").eq("post_id", post_id).order("created_at", ascending=True).execute()
-        return response.data
+        return response.data if response.data else []
     except Exception as e:
         return []
 
@@ -230,7 +230,7 @@ def get_like_count(post_id):
     """Get the number of likes for a post"""
     try:
         response = supabase.table("likes").select("id", count="exact").eq("post_id", post_id).execute()
-        return response.count
+        return response.count if response.count else 0
     except:
         return 0
 
@@ -238,7 +238,7 @@ def check_user_liked(post_id, user_id):
     """Check if a user has liked a post"""
     try:
         response = supabase.table("likes").select("id").eq("post_id", post_id).eq("user_id", user_id).execute()
-        return len(response.data) > 0
+        return len(response.data) > 0 if response.data else False
     except:
         return False
 
@@ -246,7 +246,7 @@ def get_comment_count(post_id):
     """Get the number of comments for a post"""
     try:
         response = supabase.table("comments").select("id", count="exact").eq("post_id", post_id).is_("parent_id", "null").execute()
-        return response.count
+        return response.count if response.count else 0
     except:
         return 0
 
@@ -254,7 +254,7 @@ def get_total_users():
     """Get total number of users"""
     try:
         response = supabase.table("users").select("id", count="exact").execute()
-        return response.count
+        return response.count if response.count else 0
     except:
         return 0
 
@@ -262,7 +262,7 @@ def get_total_posts():
     """Get total number of posts"""
     try:
         response = supabase.table("posts").select("id", count="exact").execute()
-        return response.count
+        return response.count if response.count else 0
     except:
         return 0
 
@@ -270,8 +270,8 @@ def add_sample_data():
     """Add sample data to the database"""
     try:
         # Check if sample data already exists
-        users_response = supabase.table("users").select("id").execute()
-        if len(users_response.data) > 0:
+        users_response = supabase.table("users").select("id", count="exact").execute()
+        if users_response.count and users_response.count > 0:
             return
         
         # Add sample users
@@ -281,19 +281,24 @@ def add_sample_data():
             {"username": "alex_coding", "email": "alex@example.com", "password": hash_password("password123"), "bio": "Software engineer and open source contributor", "created_at": datetime.now().isoformat()},
         ]
         
-        supabase.table("users").insert(users).execute()
+        users_insert = supabase.table("users").insert(users).execute()
         
         # Get user IDs
         users_data = supabase.table("users").select("id").execute()
-        user_ids = [u["id"] for u in users_data.data]
+        user_ids = [u["id"] for u in users_data.data] if users_data.data else []
+        
+        if len(user_ids) < 3:
+            return
         
         # Add sample posts
         posts = [
-            {"user_id": user_ids[0], "title": "Getting Started with Streamlit", "content": "Streamlit is an amazing framework for building data apps quickly. In this post, I'll explore the basics and best practices.", "category": "Technology", "views": 0, "created_at": datetime.now().isoformat(), "updated_at": datetime.now().isoformat()},
-            {"user_id": user_ids[1], "title": "Top 10 Travel Destinations in 2025", "content": "Planning your next adventure? Check out these incredible destinations that are perfect for 2025.", "category": "Travel", "views": 0, "created_at": datetime.now().isoformat(), "updated_at": datetime.now().isoformat()},
-            {"user_id": user_ids[0], "title": "Python Tips and Tricks", "content": "Discover some lesser-known Python features that can make your code more efficient and elegant.", "category": "Technology", "views": 0, "created_at": datetime.now().isoformat(), "updated_at": datetime.now().isoformat()},
-            {"user_id": user_ids[2], "title": "Open Source Contribution Guide", "content": "Contributing to open source projects can be intimidating at first. Here's a beginner-friendly guide to get started.", "category": "Technology", "views": 0, "created_at": datetime.now().isoformat(), "updated_at": datetime.now().isoformat()},
-            {"user_id": user_ids[1], "title": "The Ultimate Food Guide to Tokyo", "content": "Tokyo is a foodie's paradise. Let me take you through the best restaurants and street food spots I discovered.", "category": "Food", "views": 0, "created_at": datetime.now().isoformat(), "updated_at": datetime.now().isoformat()},
+            {"user_id": user_ids[0], "title": "Getting Started with Streamlit", "content": "Streamlit is an amazing framework for building data apps quickly. In this post, I'll explore the basics and best practices. Streamlit makes it incredibly easy to create beautiful web applications with just Python code. No need to learn HTML, CSS, or JavaScript!", "category": "Technology", "views": 0, "created_at": datetime.now().isoformat(), "updated_at": datetime.now().isoformat()},
+            {"user_id": user_ids[1], "title": "Top 10 Travel Destinations in 2025", "content": "Planning your next adventure? Check out these incredible destinations that are perfect for 2025. From tropical beaches to mountain ranges, there's something for everyone. Let me share my favorite spots that I've discovered over the years.", "category": "Travel", "views": 0, "created_at": datetime.now().isoformat(), "updated_at": datetime.now().isoformat()},
+            {"user_id": user_ids[0], "title": "Python Tips and Tricks", "content": "Discover some lesser-known Python features that can make your code more efficient and elegant. Python is a versatile language with many hidden gems. In this article, I'll cover some advanced techniques that every Python developer should know.", "category": "Technology", "views": 0, "created_at": datetime.now().isoformat(), "updated_at": datetime.now().isoformat()},
+            {"user_id": user_ids[2], "title": "Open Source Contribution Guide", "content": "Contributing to open source projects can be intimidating at first. Here's a beginner-friendly guide to get started. Open source is not just about code, it's about community. I'll walk you through the entire process step by step.", "category": "Technology", "views": 0, "created_at": datetime.now().isoformat(), "updated_at": datetime.now().isoformat()},
+            {"user_id": user_ids[1], "title": "The Ultimate Food Guide to Tokyo", "content": "Tokyo is a foodie's paradise. Let me take you through the best restaurants and street food spots I discovered. From traditional ramen to modern fusion cuisine, Tokyo has it all. I spent months exploring every corner of this vibrant city.", "category": "Food", "views": 0, "created_at": datetime.now().isoformat(), "updated_at": datetime.now().isoformat()},
+            {"user_id": user_ids[0], "title": "Machine Learning Basics", "content": "Understanding the fundamentals of machine learning is crucial for anyone interested in AI. In this comprehensive guide, I'll break down the key concepts and algorithms. We'll explore supervised learning, unsupervised learning, and everything in between.", "category": "Technology", "views": 0, "created_at": datetime.now().isoformat(), "updated_at": datetime.now().isoformat()},
+            {"user_id": user_ids[2], "title": "Web Development Best Practices", "content": "Building robust and scalable web applications requires following best practices. In this guide, I'll share the lessons I've learned from years of development. We'll cover everything from project structure to performance optimization and security considerations.", "category": "Technology", "views": 0, "created_at": datetime.now().isoformat(), "updated_at": datetime.now().isoformat()},
         ]
         
         supabase.table("posts").insert(posts).execute()
@@ -407,7 +412,9 @@ def get_author_name(user_obj):
     """Extract author name from user object"""
     if isinstance(user_obj, dict) and 'username' in user_obj:
         return user_obj['username']
-    return str(user_obj)
+    elif isinstance(user_obj, list) and len(user_obj) > 0:
+        return user_obj[0].get('username', 'Unknown')
+    return 'Unknown'
 
 # ==================== SIDEBAR NAVIGATION ====================
 
