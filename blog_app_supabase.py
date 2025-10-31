@@ -34,15 +34,6 @@ supabase: Client = init_supabase_connection()
 
 # ==================== DATABASE FUNCTIONS ====================
 
-def init_database_tables():
-    """Initialize database tables if they don't exist"""
-    try:
-        # Create users table
-        supabase.table("users").select("id").limit(1).execute()
-    except:
-        # Table doesn't exist, create it
-        supabase.rpc("create_users_table").execute()
-
 def hash_password(password):
     """Hash a password using SHA256"""
     return hashlib.sha256(password.encode()).hexdigest()
@@ -60,7 +51,6 @@ def create_user(username, email, password, bio=""):
         }).execute()
         return True
     except Exception as e:
-        st.error(f"Error creating user: {str(e)}")
         return False
 
 def authenticate_user(username, password):
@@ -73,7 +63,6 @@ def authenticate_user(username, password):
             return response.data[0]
         return None
     except Exception as e:
-        st.error(f"Authentication error: {str(e)}")
         return None
 
 def get_user_by_id(user_id):
@@ -84,7 +73,6 @@ def get_user_by_id(user_id):
             return response.data[0]
         return None
     except Exception as e:
-        st.error(f"Error fetching user: {str(e)}")
         return None
 
 def update_user_profile(user_id, email, bio):
@@ -96,7 +84,6 @@ def update_user_profile(user_id, email, bio):
         }).eq("id", user_id).execute()
         return True
     except Exception as e:
-        st.error(f"Error updating profile: {str(e)}")
         return False
 
 def change_password(user_id, old_password, new_password):
@@ -113,7 +100,6 @@ def change_password(user_id, old_password, new_password):
             return True
         return False
     except Exception as e:
-        st.error(f"Error changing password: {str(e)}")
         return False
 
 def create_post(user_id, title, content, category):
@@ -132,16 +118,14 @@ def create_post(user_id, title, content, category):
             return response.data[0]["id"]
         return None
     except Exception as e:
-        st.error(f"Error creating post: {str(e)}")
         return None
 
 def get_all_posts():
     """Get all posts with author info"""
     try:
-        response = supabase.table("posts").select("id, user_id, title, content, category, views, created_at, users(username)").order("created_at", desc=True).execute()
+        response = supabase.table("posts").select("id, user_id, title, content, category, views, created_at, users(username)").order("created_at", ascending=False).execute()
         return response.data
     except Exception as e:
-        st.error(f"Error fetching posts: {str(e)}")
         return []
 
 def get_post_by_id(post_id):
@@ -152,16 +136,14 @@ def get_post_by_id(post_id):
             return response.data[0]
         return None
     except Exception as e:
-        st.error(f"Error fetching post: {str(e)}")
         return None
 
 def get_user_posts(user_id):
     """Get all posts by a specific user"""
     try:
-        response = supabase.table("posts").select("id, title, content, category, views, created_at, users(username)").eq("user_id", user_id).order("created_at", desc=True).execute()
+        response = supabase.table("posts").select("id, title, content, category, views, created_at, users(username)").eq("user_id", user_id).order("created_at", ascending=False).execute()
         return response.data
     except Exception as e:
-        st.error(f"Error fetching user posts: {str(e)}")
         return []
 
 def update_post(post_id, title, content, category):
@@ -175,7 +157,6 @@ def update_post(post_id, title, content, category):
         }).eq("id", post_id).execute()
         return True
     except Exception as e:
-        st.error(f"Error updating post: {str(e)}")
         return False
 
 def delete_post(post_id):
@@ -189,7 +170,6 @@ def delete_post(post_id):
         supabase.table("posts").delete().eq("id", post_id).execute()
         return True
     except Exception as e:
-        st.error(f"Error deleting post: {str(e)}")
         return False
 
 def increment_view_count(post_id):
@@ -216,16 +196,14 @@ def add_comment(post_id, user_id, content, parent_id=None):
             return response.data[0]["id"]
         return None
     except Exception as e:
-        st.error(f"Error adding comment: {str(e)}")
         return None
 
 def get_comments(post_id):
     """Get all comments for a post"""
     try:
-        response = supabase.table("comments").select("id, user_id, content, created_at, parent_id, users(username)").eq("post_id", post_id).order("created_at", asc=True).execute()
+        response = supabase.table("comments").select("id, user_id, content, created_at, parent_id, users(username)").eq("post_id", post_id).order("created_at", ascending=True).execute()
         return response.data
     except Exception as e:
-        st.error(f"Error fetching comments: {str(e)}")
         return []
 
 def add_like(post_id, user_id):
